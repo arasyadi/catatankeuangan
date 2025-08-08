@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catatan Keuangan Pribadi</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <div class="app-header">
+            <div class="date-picker">
+                <input type="date" class="date-input" id="selected-date">
+            </div>
+            <div class="summary" style="margin-top: 15px;">
+                <div class="summary-item">
+                    <div class="summary-label">PEMASUKAN</div>
+                    <div class="summary-value income" id="total-income">0</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">PENGELUARAN</div>
+                    <div class="summary-value expense" id="total-expense">0</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">SELISIH</div>
+                    <div class="summary-value difference" id="total-difference">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="transactions-tab" class="tab-content">
+            <div class="transactions-list" id="transactions-list">
+                </div>
+        </div>
+        
+        <div id="accounts-tab" class="tab-content hidden">
+            <div class="title-container">
+                <h2 class="section-title">Daftar Rekening</h2>
+                 <button class="btn-primary btn-small" id="add-account-btn">Tambah Rekening</button>
+            </div>
+            <div class="accounts-grid" id="accounts-list">
+                </div>
+        </div>
+        
+        <div id="report-tab" class="tab-content hidden">
+            <h2 class="section-title">Rekap Keuangan</h2>
+            <div class="chart-container">
+                <canvas id="expense-chart" class="chart-canvas"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="income-chart" class="chart-canvas"></canvas>
+            </div>
+        </div>
+        
+        <div id="settings-tab" class="tab-content hidden">
+            <h2 class="section-title">Pengaturan</h2>
+            <div class="settings-form">
+                <div class="form-group">
+                    <label class="form-label">Mata Uang</label>
+                    <select class="form-select" id="currency-select">
+                        <option value="IDR">Rupiah (IDR)</option>
+                        <option value="USD">Dollar (USD)</option>
+                        <option value="EUR">Euro (EUR)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Bahasa</label>
+                    <select class="form-select" id="language-select">
+                        <option value="id">Bahasa Indonesia</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Hari Awal Bulan</label>
+                    <input type="number" class="form-input" id="start-day" min="1" max="31" value="1">
+                </div>
+                <button type="button" class="btn-primary" id="save-settings-btn">Simpan Pengaturan</button>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                    <button type="button" class="btn-secondary" id="export-data-btn" style="width: 100%; margin-bottom: 10px;">Export Data</button>
+                    <button type="button" class="btn-secondary" id="clear-data-btn" style="width: 100%; background: #dc3545;">Hapus Semua Data</button>
+                </div>
+            </div>
+        </div>
+        
+        <button class="add-transaction-btn" id="add-transaction-btn-main">+</button>
+        
+        <div class="nav-tabs">
+            <div class="tab-button active" data-tab="transactions-tab"><i>💰</i><span>Transaksi</span></div>
+            <div class="tab-button" data-tab="accounts-tab"><i>🏦</i><span>Rekening</span></div>
+            <div class="tab-button" data-tab="report-tab"><i>📊</i><span>Rekap</span></div>
+            <div class="tab-button" data-tab="settings-tab"><i>⚙️</i><span>Pengaturan</span></div>
+        </div>
+    </div>
+    
+    <div id="transaction-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header" id="transaction-modal-title">Tambah Transaksi</div>
+            <div class="form-group">
+                <label class="form-label">Jenis</label>
+                <select class="form-select" id="transaction-type">
+                    <option value="expense">Pengeluaran</option>
+                    <option value="income">Pemasukan</option>
+                </select>
+            </div>
+            <div class="form-group"><label class="form-label">Judul</label><input type="text" class="form-input" id="transaction-title"></div>
+            <div class="form-group"><label class="form-label">Kategori</label><input type="text" class="form-input" id="transaction-category"></div>
+            <div class="form-group"><label class="form-label">Jumlah</label><input type="number" class="form-input" id="transaction-amount"></div>
+            <div class="modal-buttons">
+                <button class="btn-secondary" id="cancel-transaction-btn">Batal</button>
+                <button class="btn-primary" id="save-transaction-btn">Simpan</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="account-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Tambah Rekening</div>
+            <div class="form-group"><label class="form-label">Nama Rekening</label><input type="text" class="form-input" id="account-name"></div>
+            <div class="form-group"><label class="form-label">Saldo Awal</label><input type="number" class="form-input" id="account-balance"></div>
+            <div class="modal-buttons">
+                <button class="btn-secondary" id="cancel-account-btn">Batal</button>
+                <button class="btn-primary" id="save-account-btn">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js" defer></script>
+</body>
+</html>
