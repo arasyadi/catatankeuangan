@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catatan Keuangan Pribadi</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="app-container">
-        <div class="app-header">
+        <div class="app-header" id="app-header">
             <div class="date-picker">
                 <input type="date" class="date-input" id="selected-date">
             </div>
@@ -30,21 +31,34 @@
         </div>
         
         <div id="transactions-tab" class="tab-content">
-            <div class="transactions-list" id="transactions-list">
-                </div>
+            <div class="transactions-list" id="transactions-list"></div>
         </div>
         
         <div id="accounts-tab" class="tab-content hidden">
             <div class="title-container">
                 <h2 class="section-title">Daftar Rekening</h2>
-                 <button class="btn-primary btn-small" id="add-account-btn">Tambah Rekening</button>
+                <button class="btn-primary btn-small" id="add-account-btn">Tambah Rekening</button>
             </div>
-            <div class="accounts-grid" id="accounts-list">
-                </div>
+            <div class="accounts-grid" id="accounts-list"></div>
         </div>
         
         <div id="report-tab" class="tab-content hidden">
             <h2 class="section-title">Rekap Keuangan</h2>
+            <div class="report-summary">
+                <h3>Rekapitulasi Keuangan Bulan Ini</h3>
+                <div class="report-item">
+                    <span class="report-label">Pemasukan</span>
+                    <span class="report-value income" id="report-income">Rp 0</span>
+                </div>
+                <div class="report-item">
+                    <span class="report-label">Pengeluaran</span>
+                    <span class="report-value expense" id="report-expense">Rp 0</span>
+                </div>
+                <div class="report-item">
+                    <span class="report-label">Sisa Saldo Anda</span>
+                    <span class="report-value difference" id="report-balance">Rp 0</span>
+                </div>
+            </div>
             <div class="chart-container">
                 <canvas id="expense-chart" class="chart-canvas"></canvas>
             </div>
@@ -80,6 +94,7 @@
                     <button type="button" class="btn-secondary" id="export-data-btn" style="width: 100%; margin-bottom: 10px;">Export Data</button>
                     <button type="button" class="btn-secondary" id="clear-data-btn" style="width: 100%; background: #dc3545;">Hapus Semua Data</button>
                 </div>
+                <div id="credit-box-container"></div>
             </div>
         </div>
         
