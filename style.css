@@ -65,7 +65,8 @@ body {
 }
 .summary-item { text-align: center; flex: 1; }
 .summary-label { font-size: 0.85rem; margin-bottom: 8px; opacity: 0.9; font-weight: 500; }
-.summary-value { font-size: 1.2rem; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+/* Perubahan untuk ukuran font di summary */
+.summary-value { font-size: 1.1rem; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 .income { color: #2ecc71; }
 .expense { color: #e74c3c; }
 .difference { color: #f39c12; }
@@ -129,7 +130,8 @@ body {
 .transaction-title { font-weight: 600; margin-bottom: 5px; color: #2c3e50; }
 .transaction-category { font-size: 0.85rem; color: #7f8c8d; display: flex; align-items: center; }
 .transaction-amount { font-weight: 700; font-size: 1.1rem; }
-.transaction-actions { display: flex; gap: 10px; margin-left: 10px; }
+/* Perubahan untuk tombol aksi */
+.transaction-actions { display: flex; gap: 8px; margin-left: 8px; }
 .expense-amount { color: #e74c3c; }
 .income-amount { color: #27ae60; }
 
@@ -163,7 +165,7 @@ body {
 .btn-primary.btn-small { padding: 8px 15px; font-size: 0.9rem; width: auto; }
 .btn-secondary { background: #6c757d; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; flex: 1; }
 
-.action-btn { padding: 5px 8px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.3s; }
+.action-btn { padding: 6px; min-width: 30px; font-size: 0.9rem; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
 .edit-btn { background: #3498db; color: white; }
 .edit-btn:hover { background: #2980b9; }
 .delete-btn { background: #e74c3c; color: white; }
@@ -218,10 +220,42 @@ body {
     vertical-align: middle;
 }
 
+/* --- Style untuk kategori (Baru) --- */
+.categories-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+}
+.category-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+.delete-category-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #e74c3c;
+}
+
 /* --- Responsive --- */
 @media (max-width: 480px) {
-    .summary { padding: 15px 10px; }
-    .summary-value { font-size: 1.1rem; }
+    .summary { 
+        padding: 12px 5px; 
+    }
+    .summary-label {
+        font-size: 0.75rem;
+    }
+    .summary-value { 
+        font-size: 0.9rem; 
+        font-weight: 600;
+    }
     .transaction-item { padding: 15px; }
     .tab-button { padding: 10px 5px; font-size: 0.7rem; }
 }
