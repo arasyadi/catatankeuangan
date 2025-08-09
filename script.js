@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let incomeChart = null;
     let editingTransactionId = null;
     let selectedDate = new Date().toISOString().split('T')[0];
-    let selectedMonth = new Date().toISOString().slice(0,7); // YYYY-MM for month picker
+    let selectedMonth = new Date().toISOString().slice(0, 7);
 
     // DOM Elements
     const dateInput = document.getElementById('selected-date');
@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const tabContents = document.querySelectorAll('.tab-content');
     const transactionModal = document.getElementById('transaction-modal');
     const accountModal = document.getElementById('account-modal');
+    const appHeader = document.getElementById('app-header');
+    const addTransactionBtn = document.getElementById('add-transaction-btn-main');
 
     // --- INITIALIZATION ---
     function init() {
@@ -23,10 +25,31 @@ document.addEventListener('DOMContentLoaded', function() {
         initializeDatePicker();
         setupEventListeners();
         setupCharts();
+        renderCreditBox(); // Panggil fungsi untuk render credit
         updateUI();
     }
 
-    // --- DATA PERSISTENCE (localStorage) ---
+    // --- RENDER CREDIT BOX (Tambahan) ---
+    function renderCreditBox() {
+        const container = document.getElementById('credit-box-container');
+        if (container) {
+            container.innerHTML = `
+                <div class="credit-box">
+                    <p class="credit-title">Dibuat oleh:</p>
+                    <p>
+                        <span class="credit-icon">☕</span> 
+                        <span class="credit-name">Andy Rasyadi, S.Pi., M.Si.</span>
+                    </p>
+                    <p>
+                        <span class="credit-icon">🎓</span> 
+                        Dosen Fakultas Kelautan dan Perikanan, Univ. Udayana
+                    </p>
+                </div>
+            `;
+        }
+    }
+
+    // --- DATA PERSISTENCE ---
     function saveData() {
         const data = { transactions, accounts };
         try {
@@ -68,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Gagal menyimpan pengaturan:', e);
         }
 
-        applySettings(); // terapkan segera
+        applySettings();
         alert(settings.language === 'en' ? 'Settings saved successfully!' : 'Pengaturan berhasil disimpan!');
     }
 
@@ -76,8 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const raw = localStorage.getItem('financeSettings');
             if (raw) {
-                const storedSettings = JSON.parse(raw);
-                settings = storedSettings || {};
+                settings = JSON.parse(raw) || {};
             } else {
                 settings = {};
             }
@@ -87,7 +109,6 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.removeItem('financeSettings');
         }
 
-        // apply to controls (if exist)
         const currencySelect = document.getElementById('currency-select');
         const languageSelect = document.getElementById('language-select');
         const startDay = document.getElementById('start-day');
@@ -96,14 +117,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (languageSelect) languageSelect.value = settings.language || 'id';
         if (startDay) startDay.value = settings.startDay || '1';
     }
-
+    
     // --- UI UPDATE ---
     function updateUI() {
         renderTransactions();
         renderAccounts();
         updateSummary();
+        updateReportSummary();
 
-        // Jika berada di tab rekap, perbarui chart
         const reportTab = document.getElementById('report-tab');
         if (reportTab && !reportTab.classList.contains('hidden')) {
             updateCharts();
@@ -113,7 +134,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeDatePicker() {
         if (dateInput) dateInput.value = selectedDate;
 
-        // Tambahkan month picker untuk rekap (ditambahkan via JS agar tidak mengubah HTML asli terlalu banyak)
         if (!document.getElementById('selected-month')) {
             const reportTabHeader = document.querySelector('#report-tab .section-title');
             if (reportTabHeader) {
@@ -127,13 +147,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // set event listener for month picker
         const monthInput = document.getElementById('selected-month');
         if (monthInput) {
             monthInput.value = selectedMonth;
             monthInput.addEventListener('change', () => {
                 selectedMonth = monthInput.value;
-                // hanya update chart (rekap)
+                updateReportSummary();
                 if (!document.getElementById('report-tab').classList.contains('hidden')) updateCharts();
             });
         }
@@ -152,9 +171,8 @@ document.addEventListener('DOMContentLoaded', function() {
             button.addEventListener('click', () => switchTab(button.dataset.tab));
         });
 
-        // Modals & Buttons
         const addTrxBtn = document.getElementById('add-transaction-btn-main');
-        if (addTrxBtn) addTrxBtn.addEventListener('click', showTransactionModal);
+        if (addTrxBtn) addTrxBtn.addEventListener('click', () => showTransactionModal());
 
         const addAccountBtn = document.getElementById('add-account-btn');
         if (addAccountBtn) addAccountBtn.addEventListener('click', showAccountModal);
@@ -180,14 +198,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const clearBtn = document.getElementById('clear-data-btn');
         if (clearBtn) clearBtn.addEventListener('click', clearAllData);
 
-        // Close modal on outside click
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', e => {
                 if (e.target === modal) closeModal();
             });
         });
 
-        // Close modal with Escape key
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') closeModal();
         });
@@ -203,8 +219,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const content = document.getElementById(tabId);
         if (content) content.classList.remove('hidden');
 
+        if (tabId === 'transactions-tab') {
+            appHeader.classList.remove('hidden');
+            addTransactionBtn.classList.remove('hidden');
+        } else {
+            appHeader.classList.add('hidden');
+            addTransactionBtn.classList.add('hidden');
+        }
+
         if (tabId === 'report-tab') {
-            // jalankan updateCharts sedikit kemudian agar canvas benar-benar visible
             setTimeout(() => {
                 updateCharts();
             }, 10);
@@ -231,7 +254,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 category.value = trx.category;
                 amount.value = trx.amount;
             } else {
-                // jika id tidak ditemukan, treat as new
                 editingTransactionId = null;
                 titleEl.textContent = settings.language === 'en' ? 'Add Transaction' : 'Tambah Transaksi';
                 typeEl.value = 'expense';
@@ -261,11 +283,10 @@ document.addEventListener('DOMContentLoaded', function() {
         editingTransactionId = null;
     }
 
-    // --- CORE LOGIC (Transactions, Accounts) ---
+    // --- CORE LOGIC ---
     function formatCurrency(amount) {
         const currency = (settings && settings.currency) ? settings.currency : 'IDR';
         const locale = currency === 'IDR' ? 'id-ID' : (currency === 'EUR' ? 'de-DE' : 'en-US');
-        // ensure number
         const val = Number(amount) || 0;
         return new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 0 }).format(Math.abs(val));
     }
@@ -285,7 +306,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (editingTransactionId) {
             const trxIndex = transactions.findIndex(t => t.id === editingTransactionId);
             if (trxIndex > -1) {
+                const oldTransaction = { ...transactions[trxIndex] };
                 transactions[trxIndex] = { ...transactions[trxIndex], type, title, category, amount };
+                
+                if (oldTransaction.category === 'Saldo Awal') {
+                    updateAccountBalance(oldTransaction.title.replace('Saldo Awal - ', ''), amount);
+                }
             }
         } else {
             const newTransaction = { id: Date.now(), type, title, category, amount, date: selectedDate };
@@ -296,6 +322,14 @@ document.addEventListener('DOMContentLoaded', function() {
         updateUI();
         closeModal();
     }
+    
+    function updateAccountBalance(accountName, newAmount) {
+        const accountIndex = accounts.findIndex(acc => acc.name === accountName);
+        if (accountIndex > -1) {
+            accounts[accountIndex].balance = newAmount;
+        }
+    }
+
 
     function deleteTransaction(id) {
         if (confirm(settings.language === 'en' ? 'Are you sure to delete this transaction?' : 'Anda yakin ingin menghapus transaksi ini?')) {
@@ -347,7 +381,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const container = document.getElementById('transactions-list');
         if (!container) return;
 
-        // tetap tampilkan per-hari di tab transaksi
         const dailyTransactions = transactions.filter(t => t.date === selectedDate);
 
         if (dailyTransactions.length === 0) {
@@ -370,18 +403,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${trx.type === 'expense' ? '-' : '+'}${formatCurrency(trx.amount)}
                 </div>
                 <div class="transaction-actions">
-                    <button class="action-btn edit-btn">${settings.language === 'en' ? 'Edit' : 'Edit'}</button>
-                    <button class="action-btn delete-btn">${settings.language === 'en' ? 'Delete' : 'Hapus'}</button>
+                    <button class="action-btn edit-btn" data-id="${trx.id}">${settings.language === 'en' ? 'Edit' : 'Edit'}</button>
+                    <button class="action-btn delete-btn" data-id="${trx.id}">${settings.language === 'en' ? 'Delete' : 'Hapus'}</button>
                 </div>
             </div>
         `).join('');
 
-        // Re-attach event listeners for new elements
-        container.querySelectorAll('.edit-btn').forEach((btn, index) => {
-            btn.addEventListener('click', () => showTransactionModal(dailyTransactions[index].id));
+        container.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => showTransactionModal(Number(e.target.dataset.id)));
         });
-        container.querySelectorAll('.delete-btn').forEach((btn, index) => {
-            btn.addEventListener('click', () => deleteTransaction(dailyTransactions[index].id));
+        container.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => deleteTransaction(Number(e.target.dataset.id)));
         });
     }
 
@@ -404,17 +436,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="account-name">${acc.name}</div>
                     <div class="account-balance">${formatCurrency(acc.balance)}</div>
                 </div>
-                <button class="action-btn delete-btn">${settings.language === 'en' ? 'Delete' : 'Hapus'}</button>
+                <button class="action-btn delete-btn" data-id="${acc.id}">${settings.language === 'en' ? 'Delete' : 'Hapus'}</button>
             </div>
         `).join('');
 
-        container.querySelectorAll('.delete-btn').forEach((btn, index) => {
-            btn.addEventListener('click', () => deleteAccount(accounts[index].id));
+        container.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => deleteAccount(Number(e.target.dataset.id)));
         });
     }
 
     function updateSummary() {
-        // summary tetap per-hari (sesuai tab transaksi)
         const dailyTransactions = transactions.filter(t => t.date === selectedDate);
         const totalIncome = dailyTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
         const totalExpense = dailyTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
@@ -432,11 +463,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function updateReportSummary() {
+        const monthFilter = selectedMonth || new Date().toISOString().slice(0, 7);
+        const filteredByMonth = transactions.filter(t => t.date && t.date.slice(0, 7) === monthFilter);
+
+        const totalIncome = filteredByMonth.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+        const totalExpense = filteredByMonth.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+        
+        const allAccountsBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+        
+        const reportIncomeEl = document.getElementById('report-income');
+        const reportExpenseEl = document.getElementById('report-expense');
+        const reportBalanceEl = document.getElementById('report-balance');
+
+        if (reportIncomeEl) reportIncomeEl.textContent = formatCurrency(totalIncome);
+        if (reportExpenseEl) reportExpenseEl.textContent = formatCurrency(totalExpense);
+        if (reportBalanceEl) {
+            reportBalanceEl.textContent = formatCurrency(allAccountsBalance);
+            reportBalanceEl.className = 'report-value ' + (allAccountsBalance >= 0 ? 'income' : 'expense');
+        }
+    }
+    
     // --- CHART FUNCTIONS ---
     function setupCharts() {
         const pieOptions = (title) => ({
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             plugins: {
                 title: { display: true, text: title, font: { size: 16, weight: 'bold' } },
                 legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, font: { size: 12 } } },
@@ -445,72 +496,54 @@ document.addEventListener('DOMContentLoaded', function() {
             animation: { animateRotate: true, animateScale: true }
         });
 
-        // Jika chart sudah ada (mis. re-init), destroy dulu
-        const expenseCtx = document.getElementById('expense-chart');
-        const incomeCtx = document.getElementById('income-chart');
+        const expenseCtx = document.getElementById('expense-chart')?.getContext('2d');
+        const incomeCtx = document.getElementById('income-chart')?.getContext('2d');
 
-        if (expenseChart) {
-            try { expenseChart.destroy(); } catch(e){/*ignore*/}
-        }
-        if (incomeChart) {
-            try { incomeChart.destroy(); } catch(e){/*ignore*/}
-        }
+        if (expenseChart) expenseChart.destroy();
+        if (incomeChart) incomeChart.destroy();
 
         if (expenseCtx) {
-            expenseChart = new Chart(expenseCtx.getContext('2d'), {
-                type: 'pie',
-                options: pieOptions(settings.language === 'en' ? 'Expenses by Category' : 'Pengeluaran per Kategori'),
+            expenseChart = new Chart(expenseCtx, {
+                type: 'pie', options: pieOptions(''),
                 data: { labels: [], datasets: [{ data: [], backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'] }] }
             });
         }
 
         if (incomeCtx) {
-            incomeChart = new Chart(incomeCtx.getContext('2d'), {
-                type: 'pie',
-                options: pieOptions(settings.language === 'en' ? 'Income by Category' : 'Pemasukan per Kategori'),
+            incomeChart = new Chart(incomeCtx, {
+                type: 'pie', options: pieOptions(''),
                 data: { labels: [], datasets: [{ data: [], backgroundColor: ['#2ECC71', '#3498DB', '#9B59B6', '#E67E22', '#F1C40F', '#1ABC9C'] }] }
             });
         }
-
-        // initial fill
-        updateCharts();
     }
 
     function updateCharts() {
         if (!expenseChart || !incomeChart) return;
 
-        // gunakan selectedMonth (YYYY-MM) sebagai filter untuk rekap per bulan
-        const monthFilter = selectedMonth || new Date().toISOString().slice(0,7);
+        const monthFilter = selectedMonth || new Date().toISOString().slice(0, 7);
+        const filteredByMonth = transactions.filter(t => t.date && t.date.slice(0, 7) === monthFilter);
 
-        const filteredByMonth = transactions.filter(t => {
-            // transaksi harus memiliki date in format YYYY-MM-DD
-            if (!t.date) return false;
-            return t.date.slice(0,7) === monthFilter;
-        });
-
-        const agg = (items, type) => {
-            const categories = {};
-            items.filter(t => t.type === type).forEach(t => {
-                categories[t.category] = (categories[t.category] || 0) + t.amount;
-            });
-            return categories;
+        const aggregate = (items, type) => {
+            return items.filter(t => t.type === type).reduce((acc, t) => {
+                acc[t.category] = (acc[t.category] || 0) + t.amount;
+                return acc;
+            }, {});
         };
 
-        const expenseCategories = agg(filteredByMonth, 'expense');
-        const incomeCategories = agg(filteredByMonth, 'income');
-
-        expenseChart.data.labels = Object.keys(expenseCategories);
-        expenseChart.data.datasets[0].data = Object.values(expenseCategories);
-        expenseChart.options.plugins.title.text = settings.language === 'en' ? `Expenses (${monthFilter})` : `Pengeluaran (${monthFilter})`;
+        const expenseData = aggregate(filteredByMonth, 'expense');
+        expenseChart.data.labels = Object.keys(expenseData);
+        expenseChart.data.datasets[0].data = Object.values(expenseData);
+        expenseChart.options.plugins.title.text = settings.language === 'en' ? `Expenses by Category (${monthFilter})` : `Pengeluaran per Kategori (${monthFilter})`;
         expenseChart.update();
 
-        incomeChart.data.labels = Object.keys(incomeCategories);
-        incomeChart.data.datasets[0].data = Object.values(incomeCategories);
-        incomeChart.options.plugins.title.text = settings.language === 'en' ? `Income (${monthFilter})` : `Pemasukan (${monthFilter})`;
+        const incomeData = aggregate(filteredByMonth, 'income');
+        incomeChart.data.labels = Object.keys(incomeData);
+        incomeChart.data.datasets[0].data = Object.values(incomeData);
+        incomeChart.options.plugins.title.text = settings.language === 'en' ? `Income by Category (${monthFilter})` : `Pemasukan per Kategori (${monthFilter})`;
         incomeChart.update();
     }
-
-    // --- SETTINGS FUNCTIONS ---
+    
+    // --- SETTINGS & DATA MANAGEMENT ---
     function exportData() {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ transactions, accounts, settings }, null, 2));
         const downloadAnchorNode = document.createElement('a');
@@ -531,71 +564,49 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // --- APPLY SETTINGS (currency + language + startDay) ---
+    // --- APPLY SETTINGS ---
     function applySettings() {
-        // re-render teks UI sesuai language sedikit demi sedikit
         applyLanguage();
-
-        // re-init charts (untuk judul bahasa / format)
+        // Re-initialize charts to update titles immediately
         setupCharts();
-
-        // re-render UIs (to apply new currency formatting, etc)
         updateUI();
     }
-
+    
     function applyLanguage() {
         const lang = settings.language || 'id';
-
-        // summary labels (3)
-        const summaryLabels = document.querySelectorAll('.summary-label');
-        if (summaryLabels && summaryLabels.length >= 3) {
-            summaryLabels[0].textContent = lang === 'en' ? 'INCOME' : 'PEMASUKAN';
-            summaryLabels[1].textContent = lang === 'en' ? 'EXPENSE' : 'PENGELUARAN';
-            summaryLabels[2].textContent = lang === 'en' ? 'DIFFERENCE' : 'SELISIH';
-        }
-
-        // section titles (generic)
-        const sectionTitles = document.querySelectorAll('.section-title');
-        sectionTitles.forEach(st => {
-            // keep original if it matches known ones
-            const txt = st.textContent.trim().toLowerCase();
-            if (txt.includes('daftar rekening') || txt.includes('accounts')) {
-                st.textContent = lang === 'en' ? 'Accounts' : 'Daftar Rekening';
-            } else if (txt.includes('rekap') || txt.includes('report')) {
-                st.textContent = lang === 'en' ? 'Report' : 'Rekap Keuangan';
-            } else if (txt.includes('pengaturan') || txt.includes('settings')) {
-                st.textContent = lang === 'en' ? 'Settings' : 'Pengaturan';
+        const translations = {
+            'id': {
+                'INCOME': 'PEMASUKAN', 'EXPENSE': 'PENGELUARAN', 'DIFFERENCE': 'SELISIH',
+                'Accounts': 'Daftar Rekening', 'Report': 'Rekap Keuangan', 'Settings': 'Pengaturan',
+                'Transactions': 'Transaksi', 'AccountsTab': 'Rekening', 'ReportTab': 'Rekap', 'SettingsTab': 'Pengaturan',
+                'Save': 'Simpan', 'Cancel': 'Batal', 'Save Settings': 'Simpan Pengaturan',
+                'Export Data': 'Export Data', 'Delete All Data': 'Hapus Semua Data',
+                'Edit': 'Edit', 'Delete': 'Hapus'
+            },
+            'en': {
+                'INCOME': 'INCOME', 'EXPENSE': 'EXPENSE', 'DIFFERENCE': 'DIFFERENCE',
+                'Accounts': 'Accounts', 'Report': 'Financial Report', 'Settings': 'Settings',
+                'Transactions': 'Transactions', 'AccountsTab': 'Accounts', 'ReportTab': 'Report', 'SettingsTab': 'Settings',
+                'Save': 'Save', 'Cancel': 'Cancel', 'Save Settings': 'Save Settings',
+                'Export Data': 'Export Data', 'Delete All Data': 'Delete All Data',
+                'Edit': 'Edit', 'Delete': 'Delete'
             }
-        });
+        };
 
-        // nav tab spans
-        const tabSpans = document.querySelectorAll('.nav-tabs .tab-button span');
-        if (tabSpans && tabSpans.length >= 4) {
-            tabSpans[0].textContent = lang === 'en' ? 'Transactions' : 'Transaksi';
-            tabSpans[1].textContent = lang === 'en' ? 'Accounts' : 'Rekening';
-            tabSpans[2].textContent = lang === 'en' ? 'Report' : 'Rekap';
-            tabSpans[3].textContent = lang === 'en' ? 'Settings' : 'Pengaturan';
-        }
+        const t = translations[lang];
 
-        // modal button texts
-        const saveTrxBtn = document.getElementById('save-transaction-btn');
-        const cancelTrxBtn = document.getElementById('cancel-transaction-btn');
-        const saveAccBtn = document.getElementById('save-account-btn');
-        const cancelAccBtn = document.getElementById('cancel-account-btn');
-        if (saveTrxBtn) saveTrxBtn.textContent = lang === 'en' ? 'Save' : 'Simpan';
-        if (cancelTrxBtn) cancelTrxBtn.textContent = lang === 'en' ? 'Cancel' : 'Batal';
-        if (saveAccBtn) saveAccBtn.textContent = lang === 'en' ? 'Save' : 'Simpan';
-        if (cancelAccBtn) cancelAccBtn.textContent = lang === 'en' ? 'Cancel' : 'Batal';
+        document.querySelector('.summary-item:nth-child(1) .summary-label').textContent = t.INCOME;
+        document.querySelector('.summary-item:nth-child(2) .summary-label').textContent = t.EXPENSE;
+        document.querySelector('.summary-item:nth-child(3) .summary-label').textContent = t.DIFFERENCE;
+        
+        document.querySelector('.nav-tabs .tab-button[data-tab="transactions-tab"] span').textContent = t.Transactions;
+        document.querySelector('.nav-tabs .tab-button[data-tab="accounts-tab"] span').textContent = t.AccountsTab;
+        document.querySelector('.nav-tabs .tab-button[data-tab="report-tab"] span').textContent = t.ReportTab;
+        document.querySelector('.nav-tabs .tab-button[data-tab="settings-tab"] span').textContent = t.SettingsTab;
 
-        // settings form labels & buttons (some are static in HTML; we update the Save button)
-        const saveSettingsBtn = document.getElementById('save-settings-btn');
-        if (saveSettingsBtn) saveSettingsBtn.textContent = lang === 'en' ? 'Save Settings' : 'Simpan Pengaturan';
-
-        // Export / Clear buttons
-        const exportBtn = document.getElementById('export-data-btn');
-        const clearBtn = document.getElementById('clear-data-btn');
-        if (exportBtn) exportBtn.textContent = lang === 'en' ? 'Export Data' : 'Export Data';
-        if (clearBtn) clearBtn.textContent = lang === 'en' ? 'Delete All Data' : 'Hapus Semua Data';
+        document.getElementById('save-settings-btn').textContent = t['Save Settings'];
+        document.getElementById('export-data-btn').textContent = t['Export Data'];
+        document.getElementById('clear-data-btn').textContent = t['Delete All Data'];
     }
 
     // Run the app
